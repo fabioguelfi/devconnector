@@ -3,10 +3,12 @@ const router = express.Router()
 const mongoose = require('mongoose')
 const passport = require('passport')
 const validateProfileInput = require('../../validation/profile')
+const validateExperienceInput = require('../../validation/experience')
+const validateEducationInput = require('../../validation/education')
 
 // Load Profile Model
 const Profile = require('../../models/Profile')
-// Load User Profile
+// Load User Model
 const User = require('../../models/User')
 
 // @route api/profile/test
@@ -132,5 +134,94 @@ router.post('/', passport.authenticate('jwt', { session: false }), async (req, r
         res.json(await new Profile(profileFields).save())
     }
 })
+
+// @route POST api/profile/experience
+// @desc Add experience to profile
+// @access Private
+router.post('/experience', passport.authenticate('jwt', { session: false }), async (req, res, next) => {
+    const { errors, isValid } = validateExperienceInput(req.body)
+
+    // Check Validation
+    if (!isValid) {
+        // Return any errors with 400 status
+        return res.status(400).json(errors)
+    }
+
+    const profile = await Profile.findOne({ user: req.user.id })
+    const newExp = {
+        title: req.body.title,
+        company: req.body.company,
+        location: req.body.location,
+        from: req.body.from,
+        to: req.body.to,
+        current: req.body.current,
+        description: req.body.description
+    }
+    // Add to exp array
+    profile.experience.unshift(newExp)
+
+    res.json(await profile.save())
+})
+
+// @route POST api/profile/education
+// @desc Add education to profile
+// @access Private
+router.post('/education', passport.authenticate('jwt', { session: false }), async (req, res, next) => {
+    const { errors, isValid } = validateEducationInput(req.body)
+
+    // Check Validation
+    if (!isValid) {
+        // Return any errors with 400 status
+        return res.status(400).json(errors)
+    }
+
+    const profile = await Profile.findOne({ user: req.user.id })
+    const newEdu = {
+        school: req.body.school,
+        degree: req.body.degree,
+        fieldofstudy: req.body.fieldofstudy,
+        from: req.body.from,
+        to: req.body.to,
+        current: req.body.current,
+        description: req.body.description
+    }
+    // Add to exp array
+    profile.education.unshift(newEdu)
+
+    res.json(await profile.save())
+})
+
+// @route DELETE api/profile/experience/:exp_id
+// @desc Delete experience from profile
+// @access Private
+router.delete('/experience/:exp_id', passport.authenticate('jwt', { session: false }), (req, res, next) => {
+    Profile.findOne({ user: req.user.id })
+    .then(async profile => {
+        // Get remove index
+        profile.experience = profile.experience.filter(item => item.id !== req.params.exp_id)
+        res.json(await profile.save())
+    })
+})
+
+// @route DELETE api/profile/education/:edu_id
+// @desc Delete education from profile
+// @access Private
+router.delete('/education/:edu_id', passport.authenticate('jwt', { session: false }), (req, res, next) => {
+    Profile.findOne({ user: req.user.id })
+    .then(async profile => {
+        // Get remove index
+        profile.education = profile.education.filter(item => item.id !== req.params.edu_id)
+        res.json(await profile.save())
+    })
+})
+
+// @route DELETE api/profile
+// @desc Delete profile
+// @access Private
+router.delete('/', passport.authenticate('jwt', { session: false }), async (req, res, next) => {
+    await Profile.findOneAndRemove({ user: req.user.id })
+    res.json(await User.findByIdAndRemove({ _id: req.user.id }))
+})
+
 
 module.exports = router
