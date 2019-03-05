@@ -18,7 +18,7 @@ module.exports = function validateRegisterInput(data) {
         errors.password = 'password is required'
     }
 
-    if (!validator.isEmail(data.password, { min: 6, max: 30 })) {
+    if (!validator.isLength(data.password, { min: 6, max: 30 })) {
         errors.password = 'password must be at least 6 characters'
     }
 
@@ -26,7 +26,7 @@ module.exports = function validateRegisterInput(data) {
         errors.password2 = 'password2 is required'
     }
 
-    if (validator.equals(data.password, data.password2)) {
+    if (!validator.equals(data.password, data.password2)) {
         errors.password2 = 'password must match'
     }
 

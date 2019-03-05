@@ -20,7 +20,7 @@ router.get('/test', (req, res, next) => res.json({ msg: 'profile works' }))
 router.get('/', passport.authenticate('jwt', { session: false }), async (req, res, nest) => {
     const errors = {}
     try {
-        const profile = await Profile.findOne({ user: req.user.id })
+        const profile = await Profile.findOne({ user: req.user.id }).populate('user', ['name', 'avatar'])
         if (!profile) {
             errors.noprofile = 'There is no profile for this user'
             return res.status(404).json(errors)
@@ -28,6 +28,53 @@ router.get('/', passport.authenticate('jwt', { session: false }), async (req, re
         res.json(profile)
     } catch (e) {
         errors.undefined = 'Internal Error'
+        res.status(404).json(errors)
+    }
+})
+
+// @route GET api/profile/all
+// @desc GET all profiles
+// @access Public
+router.get('/all', async (req, res, next) => {
+    const profile = await Profile.find().populate('user', ['name', 'avatar'])
+    if (!profile) {
+        errors.noprofile = 'Not exists profiles'
+        res.status(404).json(errors)
+    }
+    res.json(profile)
+})
+
+// @route GET api/profile/handle/:handle
+// @desc GET profile by handle
+// @access Public
+router.get('/handle/:handle', async (req, res, next) => {
+    const errors = {}
+    try {
+        const profile = await Profile.findOne({ handle: req.params.handle }).populate('user', ['name', 'avatar'])
+        if (!profile) {
+            errors.noprofile = 'There is no profile for this user'
+            res.status(404).json(errors)
+        }
+        res.json(profile)
+    } catch (err) {
+        res.status(404).json(err)
+    }
+})
+
+// @route GET api/profile/user/:user_id
+// @desc GET profile by User ID
+// @access Public
+router.get('/user/:user_id', async (req, res, next) => {
+    const errors = {}
+    try {
+        const profile = await Profile.findOne({ user: req.params.user_id }).populate('user', ['name', 'avatar'])
+        if (!profile) {
+            errors.noprofile = 'There is no profile for this user'
+            res.status(404).json(errors)
+        }
+        res.json(profile)
+    } catch (err) {
+        errors.noprofile = 'There is no profile for this user'
         res.status(404).json(errors)
     }
 })
@@ -68,12 +115,14 @@ router.post('/', passport.authenticate('jwt', { session: false }), async (req, r
     const profile = await Profile.findOne({ user: req.user.id })
     if (profile) {
         // Update
-        res.json(await Profile.findOneAndUpdate({ user: req.user.id }, { $set: profileFields }, { new: true }))
+        res.json(await Profile.findOneAndUpdate({ user: req.user.id }, { $set: profileFields }, { new: true }).populate('user', ['name', 'avatar']))
     } else {
         // Create
 
         // Check if handles exists
-        const profileHandle = await Profile.findOne({ handle: profileFields.handle })
+        const profileHandle =
+            await Profile.findOne({ handle: profileFields.handle })
+
         if (profileHandle) {
             errors.handle = 'That handle already exists'
             res.status(400).json(errors)
