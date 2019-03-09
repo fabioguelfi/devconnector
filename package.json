@@ -6,9 +6,11 @@
   "scripts": {
     "client-install": "npm i --force --prefix client",
     "start": "node server.js",
+    "server": "nodemon server.js",
     "client": "npm start --prefix client",
     "dev": "concurrently \"npm run server\" \"npm run client\" "
   },
+
   "keywords": [],
   "author": "",
   "license": "ISC",
